@@ -1,0 +1,12 @@
+name = "/vision:status"
+description = "Show whether the camera is open and its properties"
+
+prompt = """
+You have the tool: vision_status.
+
+Goal:
+- Call vision_status() once.
+- If open=false: print "Camera closed."
+- If open=true: print "Camera open (index=..., width=..., height=..., fps=..., backend=...)."
+- Be concise; no extra commentary.
+"""

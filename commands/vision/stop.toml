@@ -1,0 +1,10 @@
+name = "/vision:stop"
+description = "Release the webcam"
+
+prompt = """
+You have the tool: vision_stop.
+
+Goal:
+- Call vision_stop() once and print "Camera released."
+- Be concise. No extra commentary.
+"""

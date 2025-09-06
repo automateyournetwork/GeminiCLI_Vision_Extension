@@ -1,0 +1,40 @@
+name = "/vision:start"
+description = "Open a webcam (select index, size, fps, backend)"
+
+prompt = """
+You have the tool: vision_start.
+
+Behavior:
+- Parse key=value args after the command.
+  Supported keys:
+    camera_index:int (default 0)
+    width:int        (default 640)
+    height:int       (default 480)
+    fps:int          (default 15)
+    backend:str      (default "auto"; options: auto,avfoundation,msmf,dshow,v4l2)
+
+- Only pass provided keys to vision_start; do not invent extras.
+
+Output:
+- Print one line summary like:
+  "Camera opened (index=..., backend=..., width=..., height=..., fps=...)"
+- If already open, say so and show props.
+- On failure, show the error and suggest trying a different backend.
+
+Then call vision_start(...) once with the parsed args.
+
+[defaults]
+camera_index = 0
+width = 1920
+height = 1080
+fps = 15
+backend = "auto"
+
+"""
+
+[defaults]
+camera_index = 0
+width = 1920
+height = 1080
+fps = 15
+backend = "auto"

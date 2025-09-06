@@ -1,0 +1,70 @@
+name = "/vision:capture"
+description = "Capture one frame in CWD. If prompt=... is provided, call 'gemini -p \"@<frame> <prompt>\"' to execute the turn; else just save."
+
+prompt = '''
+You have the tools: vision_status, vision_capture.
+
+Behavior:
+1) Ensure camera is open via vision_status(); if not, print "Camera closed — run /vision:start" and stop.
+
+2) Parse args (optional):
+   - save_dir:str (default ".")
+   - format:str   (default "jpg"; 'jpg'|'png')
+   - prompt:str   (default "")
+   - outfile:str  (simple filename, no '/'; optional alias to also copy the frame to AND use in the prompt)
+
+3) Call vision_capture(...). Remember 'path' as CAPTURED_PATH.
+
+4) If prompt is empty use "What can you tell me about this caputure?" as the prompt
+
+5) If prompt present:
+     Choose SEND_NAME:
+       - if outfile provided: copy CAPTURED_PATH -> ./outfile
+       - else use the bare CAPTURED_PATH filename
+     Then execute:
+       GEMINI_BIN="${GEMINI_BIN:-gemini}"
+       "$GEMINI_BIN" -p "@<SEND_NAME> <prompt>"
+     Print Gemini’s output verbatim.
+     If the call fails, fall back to printing ONLY: '@<SEND_NAME> <prompt>'.
+
+!{
+  set -euo pipefail
+
+  PROMPT_TEXT="{{prompt}}"
+  OUTFILE_RAW="{{outfile}}"
+  CAPTURED="{{captured_path}}"
+  MIME="{{mime}}"
+  W="{{width}}"
+  H="{{height}}"
+
+  if [ -z "${PROMPT_TEXT:-}" ] || [ "$PROMPT_TEXT" = "None" ]; then
+    echo "Saved: $CAPTURED  (mime=$MIME, size=${W}x${H})"
+    exit 0
+  fi
+
+  CAPTURED_FILE="$CAPTURED"
+  case "$CAPTURED_FILE" in
+    */*) TMP="$CAPTURED_FILE"; while [ "${TMP#*/}" != "$TMP" ]; do TMP="${TMP#*/}"; done; CAPTURED_FILE="$TMP" ;;
+  esac
+
+  SEND_NAME="$CAPTURED_FILE"
+
+  if [ -n "${OUTFILE_RAW:-}" ] && [ "$OUTFILE_RAW" != "None" ]; then
+    cp -f "$CAPTURED" "./$OUTFILE_RAW"
+    SEND_NAME="$OUTFILE_RAW"
+  fi
+
+  GEMINI_BIN="${GEMINI_BIN:-gemini}"
+
+  if "$GEMINI_BIN" -p "@$SEND_NAME $PROMPT_TEXT"; then
+    exit 0
+  else
+    echo "@$SEND_NAME $PROMPT_TEXT"
+    exit 0
+  fi
+}
+'''
+
+[defaults]
+save_dir = "."
+format   = "jpg"

@@ -1,0 +1,12 @@
+{
+  "name": "vision",
+  "version": "1.0.0",
+  "mcpServers": {
+    "vision": {
+      "command": "${extensionPath}${/}servers${/}visionmcp${/}bin${/}python",
+      "args": ["${extensionPath}${/}servers${/}vision_mcp.py"]
+    }
+  },
+  "contextFileName": "GEMINI.md",
+  "excludeTools": []
+}

@@ -1,0 +1,14 @@
+name = "/vision:devices"
+description = "List available cameras (indexes and basic props)"
+
+prompt = """
+You have the tool: list_cameras.
+
+Goal:
+- Call list_cameras(max_index=10) and print a concise table:
+  index | open | width x height | fps
+
+Rules:
+- Do not call other tools.
+- If no cameras are openable, suggest checking OS permissions (camera access), USB connection, or backend choices.
+"""

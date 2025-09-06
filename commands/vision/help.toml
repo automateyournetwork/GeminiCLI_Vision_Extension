@@ -1,0 +1,40 @@
+name = "/vision"
+description = "Show Vision MCP help and quick usage"
+
+prompt = """
+Vision (webcam stills via MCP)
+------------------------------
+Subcommands:
+• /vision:devices                      List available cameras with basic props.
+• /vision:start [key=value ...]        Open a camera (camera_index,width,height,fps,backend).
+• /vision:status                       Show camera state and properties.
+• /vision:capture [save_dir=... format=jpg|png]
+                                       Grab one frame (returns path + base64).
+• /vision:burst [n=5 period_ms=200 save_dir=... format=jpg|png duration_ms]
+                                       Capture N frames spaced by period_ms (if supported).
+• /vision:asl [mode=reply cycles=0 pause_secs=30 duration_ms=10000 format=jpg]
+                                       Hands-free loop: burst → Gemini reply → pause → repeat.
+                                       Modes:
+                                         - reply       Interpret signs then reply as assistant (default).
+                                         - transcribe  Transcribe the signing only.
+                                         - both        Show transcript, then assistant reply.
+
+Notes:
+- /vision:asl re-checks camera each loop and stops if closed, no frames, cycles reached (>0), or ~60m safety cap.
+- Attachment tokens are built automatically and passed INSIDE the Gemini prompt; you do not need to add @files.
+
+Examples:
+• /vision:devices
+• /vision:start camera_index=0 backend=avfoundation width=640 height=480 fps=15
+• /vision:capture
+• /vision:burst n=10 period_ms=150 duration_ms=3000 format=jpg
+• /vision:asl --duration_ms=10000                 (default conversational replies)
+• /vision:asl mode=transcribe pause_secs=10       (pure transcript, shorter pause)
+• /vision:asl mode=both cycles=3                  (3 loops, show transcript + reply)
+• /vision:stop
+
+Defaults:
+- capture/burst format: jpg
+- burst period_ms: 200
+- /vision:asl: mode=reply, cycles=0 (run until stop/safety), pause_secs=30, duration_ms=10000
+"""

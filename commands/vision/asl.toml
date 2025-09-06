@@ -1,0 +1,95 @@
+name = "/vision:asl"
+description = "Loop: burst → Gemini answer → 30s pause → repeat (ASL photo-sequence interpreter)."
+
+prompt = '''
+You have the tools: vision_status, vision_burst.
+
+Args:
+- cycles:int     How many capture→answer loops to run (0 = until safety cap/camera closes).
+- pause_secs:int Seconds to pause so the user can read before the next burst.
+- mode:str       One of reply | transcribe | both. Default: reply.
+- n:int, period_ms:int, duration_ms:int, format:str → forwarded to vision_burst.
+
+High-level behavior:
+- HANDS-FREE LOOP at the prompt level: status → burst → (shell once: gemini + sleep) → repeat.
+- No loops inside the shell.
+- Re-check camera before each burst.
+- Stop when camera closed, no frames, cycles reached, or ~60 minutes elapsed.
+
+Per-cycle steps:
+1) vision_status(); if open=false: print "Camera closed — run /vision:start" and end.
+2) vision_burst(...); bind newline-joined paths into {{paths}}; if empty: end politely.
+3) Run the shell once (stride, build @files, call gemini with the instruction, sleep).
+4) Repeat from step 1 until a stop condition.
+
+!{
+PATHS_RAW="{{paths}}"
+PAUSE="{{pause_secs}}"
+[ -z "$PAUSE" ] && PAUSE="30"
+
+# --- Output mode → instruction text ---
+MODE="{{mode}}"
+[ -z "$MODE" ] && MODE="reply"
+case "$MODE" in
+  reply)
+    INSTR="You are an ASL interpreter **and** conversational assistant. First infer the user's signed message from the attached photo sequence (chronological, left→right). Then reply **as the assistant** in natural, concise English. Do not show the intermediate transcript. If the user signs a question like 'What is your name?', answer it directly (e.g., 'I'm Gemini.'). If the user signs 'My name is John', respond appropriately (e.g., 'Nice to meet you, John!'). Output only your assistant reply."
+    ;;
+  transcribe)
+    INSTR="You are an ASL interpreter. Analyze ONLY the attached photo sequence (chronological, left→right). Transcribe the user's signing into clear English. If unsure about a word, fingerspell it in ALL CAPS in brackets. Output ONLY the transcript text."
+    ;;
+  both)
+    INSTR="You are an ASL interpreter **and** assistant. 1) Transcribe the user's signing from the attached photo sequence (chronological, left→right). 2) On the next line, reply as a helpful assistant. Format exactly:
+Transcript: <text>
+Assistant: <reply>"
+    ;;
+  *)
+    INSTR="You are an ASL interpreter **and** conversational assistant. First infer the user's signed message, then reply as the assistant. Output only your assistant reply."
+    ;;
+esac
+
+# --- Select every other frame, build @file tokens ---
+files=()
+take=1
+while IFS= read -r P; do
+  [ -z "$P" ] && continue
+  if [ $take -eq 1 ]; then
+    F=${P##*/}      # assumes save_dir="."
+    files+=("@$F")
+    take=0
+  else
+    take=1
+  fi
+done <<'EOF'
+$PATHS_RAW
+EOF
+
+if [ "${#files[@]}" -eq 0 ]; then
+  echo "No frames selected after stride — ending."
+  exit 0
+fi
+
+prefix=""
+for f in "${files[@]}"; do
+  prefix="$prefix$f "
+done
+
+# --- One-shot call: print assistant reply/transcript per mode ---
+gemini -p "${prefix}${INSTR}"
+
+echo "(pausing ${PAUSE}s before next capture…)"
+sleep "$PAUSE"
+}
+
+Loop rules:
+- If {{cycles}} > 0, repeat that many times unless a stop condition triggers earlier.
+- If {{cycles}} == 0, repeat until camera closes or ~60 minutes elapse (safety valve).
+'''
+
+[defaults]
+format      = "jpg"
+n           = 0
+period_ms   = 150
+duration_ms = 10000
+cycles      = 0
+pause_secs  = 30
+mode        = "reply"
