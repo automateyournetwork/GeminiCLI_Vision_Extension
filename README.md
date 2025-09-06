@@ -12,10 +12,10 @@ git clone https://github.com/automateyournetwork/GeminiCLI_Vision_Extension.git 
 
 ## How to add to Gemini-CLI (in the futture) 
 
-``bash
+```bash
 
 gemini extensions install —source https://github.com/automateyournetwork/GeminiCLI_Vision_Extension.git
 
-``
+```
 
 ## Enjoy! 
