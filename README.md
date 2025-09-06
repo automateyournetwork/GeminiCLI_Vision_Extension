@@ -10,7 +10,7 @@ git clone https://github.com/automateyournetwork/GeminiCLI_Vision_Extension.git 
     ~/.gemini/extensions/vision
 ```
 
-## How to add to Gemini-CLI (in the futture) 
+## How to add to Gemini-CLI (in the future) 
 
 ```bash
 
