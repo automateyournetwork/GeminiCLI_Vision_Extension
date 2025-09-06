@@ -4,8 +4,10 @@ An Extension for Gemini-CLI that enables Webcam access including single frame ca
 ## How to 
 
 ```bash
-gemini extensions install —source https://github.com/automateyournetwork/GeminiCLI_Vision_Extension.git
+mkdir -p ~/.gemini/extensions
 
+git clone https://github.com/automateyournetwork/GeminiCLI_Vision_Extension.git \
+    ~/.gemini/extensions/vision
 ```
 
 ## Enjoy! 
