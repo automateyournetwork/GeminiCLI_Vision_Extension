@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "mcpServers": {
     "vision": {
-      "command": "${extensionPath}${/}servers${/}visionmcp${/}bin${/}python3",
-      "args": ["${extensionPath}${/}servers${/}vision_mcp.py"]
+      "command": "bash",
+      "args": ["${extensionPath}${/}servers${/}run.sh"]
     }
   },
   "contextFileName": "GEMINI.md",
