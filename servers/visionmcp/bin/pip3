@@ -1,4 +1,4 @@
-#!/home/johncapobianco/Vision_MCP_for_Gemini_CLI/visionmcp/bin/python3
+#!/Users/johncapobianco/.gemini/extensions/vision/servers/visionmcp/bin/python3.11
 # -*- coding: utf-8 -*-
 import re
 import sys

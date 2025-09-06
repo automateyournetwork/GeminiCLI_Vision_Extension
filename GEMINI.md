@@ -4,13 +4,13 @@ This extension adds a Vision MCP server and a set of `/vision` commands for Gemi
 Use it to list cameras, open a device, capture frames/bursts, and run ASL mode.
 
 ## Commands
-- **/vision:help** — quick help and examples.
+- **/vision** — quick help and examples.
 - **/vision:devices** — list available cameras and basic properties.
 - **/vision:start** — open a camera.
-  - keys: `camera_index` (int), `width`, `height`, `fps`, `backend` (auto|avfoundation|v4l2|dshow|msmf, etc.)
+  - keys: `camera_index`, `width`, `height`, `fps`, `backend` (auto|avfoundation|v4l2|dshow|msmf)
 - **/vision:status** — show camera state + properties.
 - **/vision:capture** — single frame; options: `save_dir`, `format` (jpg|png).
-- **/vision:burst** *(if present)* — capture N frames spaced by `period_ms`.
+- **/vision:burst** — capture N frames spaced by `period_ms`.
 - **/vision:stop** — release the camera.
 - **/vision:asl** — timed burst → every other frame → ASL interpretation instruction line.
 
@@ -20,18 +20,15 @@ Use it to list cameras, open a device, capture frames/bursts, and run ASL mode.
 3. `/vision:capture` or `/vision:asl`
 4. `/vision:stop`
 
-## Notes & Tips
-- **macOS**: if using iPhone/Continuity Camera or USB cams, you may need to grant **Camera** permission to the terminal app.
-- **Linux**: ensure your user can access `/dev/video*` (e.g., `video` group) and that `v4l2` is available.
-- **Windows**: backends like `msmf` or `dshow` can help if `auto` fails.
-- Frame formats default to `jpg` unless your command overrides with `format=png`.
-
 ## ASL Mode (High-level)
 - Captures a short burst (`duration_ms`, `period_ms`, or `n`) via `vision_burst`.
-- Keeps every other frame (`@f0 @f2 @f4 …`) and appends an instruction:
-  “You are an ASL interpreter… Output ONLY the transcript text.”
-- Designed for quick, inline ASL transcription experiments.
+- Keeps every other frame (tokens like `\@f0` `\@f2` `\@f4`) and appends an instruction:
+  “You are an ASL interpreter. Analyze ONLY the attached photo sequence (left→right is chronological). Transcribe the user's signing into clear, grammatical English. If unsure about a word, fingerspell it in ALL CAPS in brackets. Output ONLY the transcript text.”
+
+## Notes
+- macOS: grant **Camera** permission to your terminal (System Settings → Privacy & Security → Camera).
+- Linux: ensure user has access to `/dev/video*` (e.g., add to `video` group).
+- Windows: try `msmf`/`dshow` backends if `auto` fails.
 
 ## Safety
-- This extension does **not** run shell commands by default.
-- Always stop the camera with `/vision:stop` when finished.
+- No shell execution. Always stop the camera with `/vision:stop`.
