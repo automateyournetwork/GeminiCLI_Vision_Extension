@@ -1,27 +1,51 @@
-name = "/vision"
+name = "vision:help"
 description = "Show Vision MCP help and quick usage"
 
 prompt = """
+
+When user asks for help about this tool use the following guiding help instructions
+
 Vision (webcam stills via MCP)
 ------------------------------
 Subcommands:
-• /vision:devices                      List available cameras with basic props.
-• /vision:start [key=value ...]        Open a camera (camera_index,width,height,fps,backend).
-• /vision:status                       Show camera state and properties.
+• /vision:devices                         List available cameras with basic props.
+• /vision:start [key=value ...]           Open a camera (camera_index,width,height,fps,backend).
+• /vision:status                          Show camera state and properties.
 • /vision:capture [save_dir=... format=jpg|png]
-                                       Grab one frame (returns path + base64).
+                                          Grab one frame (returns path; no base64).
 • /vision:burst [n=5 period_ms=200 save_dir=... format=jpg|png duration_ms]
-                                       Capture N frames spaced by period_ms (if supported).
+                                          Capture N frames spaced by period_ms (if supported).
 • /vision:asl [mode=reply cycles=0 pause_secs=30 duration_ms=10000 format=jpg]
-                                       Hands-free loop: burst → Gemini reply → pause → repeat.
-                                       Modes:
-                                         - reply       Interpret signs then reply as assistant (default).
-                                         - transcribe  Transcribe the signing only.
-                                         - both        Show transcript, then assistant reply.
+                                          Hands-free loop: burst → Gemini reply → pause → repeat.
+                                          Modes:
+                                            - reply       Interpret signs then reply as assistant (default).
+                                            - transcribe  Transcribe the signing only.
+                                            - both        Show transcript, then assistant reply.
+• /vision:banana [key=value ...] "prompt"
+                                          Capture one frame, then generate AI image(s) from it with Banana (Gemini).
+                                          Auto-starts camera if closed via vision_start.
+                                          Args:
+                                            - prompt:str        (quoted string or prompt=...)
+                                            - n:int             (default 1) number of generated images
+                                            - out_dir:str       (default ".") where to save outputs
+                                            - format:str        (default "jpg") capture format ('jpg'|'png')
+                                            - model:str         (default "gemini-2.5-flash-image-preview")
+                                            - outfile_base:str  (optional) also copy capture to ./<base>.<ext>
+                                            - camera_index:int  (optional) passed to auto-start if needed
+                                            - width:int,height:int,fps:int,backend:str (optional) for auto-start
+• /banana [key=value ...] "prompt"
+                                          Generate AI image(s) from text only (no capture). Uses Banana.
+                                          Args:
+                                            - prompt:str  (required)
+                                            - n:int       (default 1)
+                                            - out_dir:str (default ".")
+                                            - model:str   (default "gemini-2.5-flash-image-preview")
 
 Notes:
 - /vision:asl re-checks camera each loop and stops if closed, no frames, cycles reached (>0), or ~60m safety cap.
-- Attachment tokens are built automatically and passed INSIDE the Gemini prompt; you do not need to add @files.
+- Attachment tokens (@file) are printed for convenience where applicable; you can feed them to subsequent prompts.
+- Banana features require GEMINI_API_KEY in environment and google-genai installed.
+- Capture/ burst return file paths only (no base64) to keep CLI lean.
 
 Examples:
 • /vision:devices
@@ -31,10 +55,14 @@ Examples:
 • /vision:asl --duration_ms=10000                 (default conversational replies)
 • /vision:asl mode=transcribe pause_secs=10       (pure transcript, shorter pause)
 • /vision:asl mode=both cycles=3                  (3 loops, show transcript + reply)
-• /vision:stop
+• /vision:banana "Make this look like a Pixar movie poster"
+• /vision:banana prompt="Cyberpunk neon portrait" n=2 out_dir="outputs"
+• /vision:banana "Painterly oil style" camera_index=1 width=1280 height=720 fps=30
+• /banana "A futuristic skyline at dusk, volumetric light" n=3 out_dir="gen"
 
 Defaults:
 - capture/burst format: jpg
 - burst period_ms: 200
 - /vision:asl: mode=reply, cycles=0 (run until stop/safety), pause_secs=30, duration_ms=10000
+- /vision:banana: model=gemini-2.5-flash-image-preview, n=1, out_dir=".", format="jpg"
 """
