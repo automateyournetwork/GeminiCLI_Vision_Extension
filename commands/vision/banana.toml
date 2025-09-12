@@ -1,0 +1,54 @@
+name = "/vision:banana"
+description = "Capture one frame, then generate AI image(s) from it using Banana (Gemini). Emits saved file paths and @attachments."
+
+prompt = '''
+You have the tools: vision_status, vision_capture, banana_generate.
+
+Behavior:
+
+1) Ensure camera is open:
+   - Call vision_status().
+   - If open=false, print "Camera closed — run /vision:start" and stop.
+
+2) Parse args (all optional):
+   - prompt:str        (default "Create a refined, cinematic re-imagination of this photo.")
+   - out_dir:str       (default ".")
+   - format:str        (default "jpg"; 'jpg'|'png')   # affects the capture file, not the generated images
+   - model:str         (default "gemini-2.5-flash-image-preview")
+   - n:int             (default 1)  # desired count of generated images
+   - outfile_base:str  (optional; if set, also copy the capture as ./<outfile_base>.<ext> for easier @ref)
+
+3) Capture:
+   - Call vision_capture(save_dir=out_dir, format=format).
+   - Bind {{captured_path}} from the returned 'path'.
+
+4) Optional alias:
+   - If outfile_base is provided, copy {{captured_path}} -> ./<outfile_base>.<ext> (keep extension).
+   - Set {{send_name}} to the bare filename you want to show/attach (outfile or captured filename).
+
+5) Generate:
+   - Call banana_generate(
+       prompt={{prompt | default:"Create a refined, cinematic re-imagination of this photo."}},
+       input_paths=[{{captured_path}}],
+       out_dir={{out_dir | default:"."}},
+       model={{model | default:"gemini-2.5-flash-image-preview"}},
+       n={{n | default:1}}
+     ).
+   - Bind returned 'paths' array to {{gen_paths}} (may be empty on error).
+
+6) Output:
+   - Print a short summary line:
+       "Captured: {{captured_path}}"
+   - For each {{p}} in {{gen_paths}}:
+       • Print: "Saved: {{p}}"
+       • Also emit an @-attachment line using the bare filename (no directories), e.g. "@<filename>"
+     (Strip directories from both {{captured_path}} and generated paths for @-attachment convenience.)
+
+If any step fails, print a single concise error line and stop.
+'''
+
+[defaults]
+out_dir = "."
+format  = "jpg"
+model   = "gemini-2.5-flash-image-preview"
+n       = 1

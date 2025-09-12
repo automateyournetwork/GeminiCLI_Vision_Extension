@@ -3,3 +3,4 @@ fastmcp
 opencv-python-headless
 pillow
 numpy
+google-genai
