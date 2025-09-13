@@ -1,4 +1,4 @@
-name = "/vision:neo"
+name = "/vision:veo"
 description = "Capture → Banana image → Veo video. Auto-starts camera if closed. Saves outputs and emits @attachments."
 
 prompt = '''

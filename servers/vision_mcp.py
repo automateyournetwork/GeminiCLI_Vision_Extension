@@ -418,7 +418,7 @@ except Exception as e:
     # Don't raise here; only the tool call needs it.
     
 @mcp.tool()
-def neo_generate_video(
+def veo_generate_video(
     prompt: str,
     negative_prompt: str = "",
     out_dir: str = ".",
