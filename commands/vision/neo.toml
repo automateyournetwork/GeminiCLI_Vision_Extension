@@ -1,0 +1,63 @@
+name = "/vision:neo"
+description = "Capture → Banana image → Veo video. Auto-starts camera if closed. Saves outputs and emits @attachments."
+
+prompt = '''
+You have the tools: vision_status, vision_start, vision_capture, banana_generate, neo_generate_video.
+
+Behavior:
+
+0) Parse args (all optional unless noted):
+   - prompt:str             (freeform; if set and banana_prompt/veo_prompt are empty, reuse for both)
+   - banana_prompt:str      (default "Transform this selfie into a high-contrast pencil sketch.")
+   - veo_prompt:str         (default "Animate a dynamic kung fu sequence in the style of the sketch.")
+   - negative_prompt:str    (default "")
+   - out_dir:str            (default ".")
+   - format:str             (default "jpg"; 'jpg'|'png')  # capture format
+   - banana_model:str       (default "gemini-2.5-flash-image-preview")
+   - veo_model:str          (default "veo-3.0-generate-001")
+   - n:int                  (default 1)   # number of Banana images (we use the first for thumbnail/reference)
+   - camera_index:int       (optional)    # used only if we auto-start
+   - width:int,height:int,fps:int,backend:str (optional) for auto-start
+
+1) Ensure camera:
+   - Call vision_status().
+   - If open=false, call vision_start(camera_index={{camera_index|0}}, width={{width|640}}, height={{height|480}}, fps={{fps|15}}, backend="{{backend|auto}}").
+   - Call vision_status() again; if still closed, print "Camera failed to open" and stop.
+
+2) Capture:
+   - Call vision_capture(save_dir={{out_dir|"."}}, format={{format|"jpg"}}).
+   - Bind {{captured_path}} from 'path'.
+
+3) Banana (image gen):
+   - Determine {{bp}} = banana_prompt if provided else (prompt if provided else default).
+   - Call banana_generate(
+       prompt={{bp}},
+       input_paths=[{{captured_path}}],
+       out_dir={{out_dir|"."}},
+       model={{banana_model|"gemini-2.5-flash-image-preview"}},
+       n={{n|1}}
+     ).
+   - Bind first of returned 'paths' to {{banana_img}} if available.
+
+4) Veo (video gen):
+   - Determine {{vp}} = veo_prompt if provided else (prompt if provided else default).
+   - Call neo_generate_video(
+       prompt={{vp}},
+       negative_prompt={{negative_prompt|""}},
+       out_dir={{out_dir|"."}},
+       model={{veo_model|"veo-3.0-generate-001"}}
+     ).
+   - Bind returned 'paths' to {{video_paths}}.
+
+5) Output:
+   - Print "Captured: {{captured_path}}"
+   - If {{banana_img}}: print "Banana: {{banana_img}}" and emit "@<banana_basename>"
+   - For each {{v}} in {{video_paths}}:
+       • Print "Video: {{v}}"
+       • Also emit "@<video_basename>"
+   - Strip directories from all @-attachments.
+
+Notes:
+- Veo public API here is text-only; Banana image is saved for thumbnails/reference.
+- On any failure, print one concise error and stop.
+'''

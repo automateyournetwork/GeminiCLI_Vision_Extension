@@ -407,6 +407,88 @@ def banana_generate(
         "guided_by": input_paths,
     }
 
+# --- Neo (text→video via Veo) -------------------------------------------------
+# deps: pip install google-genai
+try:
+    from google import genai
+    from google.genai import types as gtypes
+    import mimetypes, base64
+except Exception as e:
+    log.error("google-genai not available: %s", e)
+    # Don't raise here; only the tool call needs it.
+    
+@mcp.tool()
+def neo_generate_video(
+    prompt: str,
+    negative_prompt: str = "",
+    out_dir: str = ".",
+    model: str = "veo-3.0-generate-001",
+    poll_seconds: int = 8,
+    max_wait_seconds: int = 900,  # 15 min safety cap
+) -> Dict[str, Any]:
+    """
+    Generate a video from text with Veo. Saves MP4(s) to out_dir and returns their paths.
+    NOTE: The public example API is text-only; image conditioning isn't exposed here.
+    """
+    try:
+        from google import genai
+        from google.genai import types as gtypes
+    except Exception as e:
+        return {"ok": False, "error": f"google-genai not installed: {e}"}
+
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        return {"ok": False, "error": "GEMINI_API_KEY not set in environment"}
+
+    client = genai.Client(api_key=api_key)
+    out_dir_p = Path(os.path.expanduser(out_dir))
+    out_dir_p.mkdir(parents=True, exist_ok=True)
+
+    try:
+        op = client.models.generate_videos(
+            model=model,
+            prompt=prompt,
+            config=gtypes.GenerateVideosConfig(
+                negative_prompt=negative_prompt if negative_prompt else None
+            ),
+        )
+    except Exception as e:
+        return {"ok": False, "error": f"veo start failed: {e}"}
+
+    # Poll
+    waited = 0
+    try:
+        while not op.done:
+            if waited >= max_wait_seconds:
+                return {"ok": False, "error": f"timeout after {max_wait_seconds}s"}
+            time.sleep(max(1, int(poll_seconds)))
+            waited += poll_seconds
+            op = client.operations.get(op)
+    except Exception as e:
+        return {"ok": False, "error": f"veo poll failed: {e}"}
+
+    try:
+        vids = getattr(op.response, "generated_videos", []) or []
+    except Exception:
+        vids = []
+
+    if not vids:
+        return {"ok": False, "error": "no videos in response"}
+
+    saved: list[str] = []
+    for idx, gv in enumerate(vids):
+        try:
+            dl = client.files.download(file=gv.video)
+            ts = time.strftime("%Y%m%d_%H%M%S")
+            ms = int((time.time() % 1) * 1000)
+            fpath = out_dir_p / f"neo_{ts}_{ms:03d}_{idx:02d}.mp4"
+            gv.video.save(str(fpath))
+            saved.append(str(fpath))
+        except Exception as e:
+            return {"ok": False, "error": f"save failed: {e}", "paths": saved}
+
+    return {"ok": True, "paths": saved, "model": model, "seconds_waited": waited}
+
 @mcp.tool()
 def vision_stop() -> Dict[str, Any]:
     """
