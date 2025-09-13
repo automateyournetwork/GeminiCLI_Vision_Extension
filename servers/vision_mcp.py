@@ -407,7 +407,7 @@ def banana_generate(
         "guided_by": input_paths,
     }
 
-# --- Neo (text→video via Veo) -------------------------------------------------
+# --- veo (text→video via Veo) -------------------------------------------------
 # deps: pip install google-genai
 try:
     from google import genai
@@ -423,16 +423,17 @@ def veo_generate_video(
     negative_prompt: str = "",
     out_dir: str = ".",
     model: str = "veo-3.0-generate-001",
+    image_path: str | None = None,   # NEW: pass a still to animate
+    aspect_ratio: str | None = None, # e.g. "16:9" or "9:16"
+    resolution: str | None = None,   # e.g. "720p" or "1080p" (16:9 only)
+    seed: int | None = None,         # small determinism bump
     poll_seconds: int = 8,
-    max_wait_seconds: int = 900,  # 15 min safety cap
+    max_wait_seconds: int = 900,
 ) -> Dict[str, Any]:
-    """
-    Generate a video from text with Veo. Saves MP4(s) to out_dir and returns their paths.
-    NOTE: The public example API is text-only; image conditioning isn't exposed here.
-    """
     try:
         from google import genai
         from google.genai import types as gtypes
+        import mimetypes
     except Exception as e:
         return {"ok": False, "error": f"google-genai not installed: {e}"}
 
@@ -444,18 +445,34 @@ def veo_generate_video(
     out_dir_p = Path(os.path.expanduser(out_dir))
     out_dir_p.mkdir(parents=True, exist_ok=True)
 
+    # Optional image conditioning
+    image_obj = None
+    if image_path:
+        try:
+            with open(image_path, "rb") as f:
+                data = f.read()
+            mt, _ = mimetypes.guess_type(image_path)
+            image_obj = gtypes.Image(image_bytes=data, mime_type=mt or "image/png")
+        except Exception as e:
+            return {"ok": False, "error": f"read image failed: {e}"}
+
+    cfg = gtypes.GenerateVideosConfig(
+        negative_prompt=negative_prompt or None,
+        aspect_ratio=aspect_ratio or None,
+        resolution=resolution or None,
+        seed=seed,
+    )
+
     try:
         op = client.models.generate_videos(
             model=model,
             prompt=prompt,
-            config=gtypes.GenerateVideosConfig(
-                negative_prompt=negative_prompt if negative_prompt else None
-            ),
+            image=image_obj,      # <-- this is now supported (Image object)
+            config=cfg,
         )
     except Exception as e:
         return {"ok": False, "error": f"veo start failed: {e}"}
 
-    # Poll
     waited = 0
     try:
         while not op.done:
@@ -467,27 +484,29 @@ def veo_generate_video(
     except Exception as e:
         return {"ok": False, "error": f"veo poll failed: {e}"}
 
-    try:
-        vids = getattr(op.response, "generated_videos", []) or []
-    except Exception:
-        vids = []
-
+    vids = getattr(op.response, "generated_videos", []) or []
     if not vids:
         return {"ok": False, "error": "no videos in response"}
 
     saved: list[str] = []
     for idx, gv in enumerate(vids):
-        try:
-            dl = client.files.download(file=gv.video)
-            ts = time.strftime("%Y%m%d_%H%M%S")
-            ms = int((time.time() % 1) * 1000)
-            fpath = out_dir_p / f"neo_{ts}_{ms:03d}_{idx:02d}.mp4"
-            gv.video.save(str(fpath))
-            saved.append(str(fpath))
-        except Exception as e:
-            return {"ok": False, "error": f"save failed: {e}", "paths": saved}
+        dl = client.files.download(file=gv.video)
+        ts = time.strftime("%Y%m%d_%H%M%S")
+        ms = int((time.time() % 1) * 1000)
+        fpath = out_dir_p / f"veo_{ts}_{ms:03d}_{idx:02d}.mp4"
+        gv.video.save(str(fpath))
+        saved.append(str(fpath))
 
-    return {"ok": True, "paths": saved, "model": model, "seconds_waited": waited}
+    return {
+        "ok": True,
+        "paths": saved,
+        "model": model,
+        "seconds_waited": waited,
+        "image_used": bool(image_obj),
+        "aspect_ratio": aspect_ratio,
+        "resolution": resolution,
+        "seed": seed,
+    }
 
 @mcp.tool()
 def vision_stop() -> Dict[str, Any]:

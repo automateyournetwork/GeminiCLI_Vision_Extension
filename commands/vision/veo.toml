@@ -2,7 +2,7 @@ name = "/vision:veo"
 description = "Capture → Banana image → Veo video. Auto-starts camera if closed. Saves outputs and emits @attachments."
 
 prompt = '''
-You have the tools: vision_status, vision_start, vision_capture, banana_generate, neo_generate_video.
+You have the tools: vision_status, vision_start, vision_capture, banana_generate, veo_generate_video.
 
 Behavior:
 
@@ -15,9 +15,12 @@ Behavior:
    - format:str             (default "jpg"; 'jpg'|'png')  # capture format
    - banana_model:str       (default "gemini-2.5-flash-image-preview")
    - veo_model:str          (default "veo-3.0-generate-001")
-   - n:int                  (default 1)   # number of Banana images (we use the first for thumbnail/reference)
+   - n:int                  (default 1)   # number of Banana images (we use the first)
    - camera_index:int       (optional)    # used only if we auto-start
    - width:int,height:int,fps:int,backend:str (optional) for auto-start
+   - aspect_ratio:str       (optional; e.g., "16:9" or "9:16")
+   - resolution:str         (optional; e.g., "1080p" for 16:9)
+   - seed:int               (optional)
 
 1) Ensure camera:
    - Call vision_status().
@@ -39,13 +42,17 @@ Behavior:
      ).
    - Bind first of returned 'paths' to {{banana_img}} if available.
 
-4) Veo (video gen):
+4) Veo (video gen, image-conditioned):
    - Determine {{vp}} = veo_prompt if provided else (prompt if provided else default).
-   - Call neo_generate_video(
+   - Call veo_generate_video(
        prompt={{vp}},
        negative_prompt={{negative_prompt|""}},
        out_dir={{out_dir|"."}},
-       model={{veo_model|"veo-3.0-generate-001"}}
+       model={{veo_model|"veo-3.0-generate-001"}},
+       image_path={{banana_img or captured_path}},
+       aspect_ratio={{aspect_ratio|None}},
+       resolution={{resolution|None}},
+       seed={{seed|None}}
      ).
    - Bind returned 'paths' to {{video_paths}}.
 
@@ -57,7 +64,5 @@ Behavior:
        • Also emit "@<video_basename>"
    - Strip directories from all @-attachments.
 
-Notes:
-- Veo public API here is text-only; Banana image is saved for thumbnails/reference.
-- On any failure, print one concise error and stop.
+On any failure, print one concise error and stop.
 '''
