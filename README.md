@@ -14,7 +14,7 @@ git clone https://github.com/automateyournetwork/GeminiCLI_Vision_Extension.git 
 
 ```bash
 
-gemini extensions install —source https://github.com/automateyournetwork/GeminiCLI_Vision_Extension.git
+gemini extensions install https://github.com/automateyournetwork/GeminiCLI_Vision_Extension.git
 
 ```
 
