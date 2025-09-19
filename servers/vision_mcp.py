@@ -539,9 +539,14 @@ def asl_understand(
         "1) Transcribe the user's signing into clear English (Transcript).\n"
         "2) Write the best assistant reply in English (AssistantReply), helpful and considerate.\n"
         "3) Convert AssistantReply into ASL GLOSS (ASLGloss) using standard uppercase glossing, "
-        "   include non-manual markers when relevant (e.g., EYEBROWS-UP for yes/no question).\n"
+        "   and include non-manual markers when relevant (e.g., EYEBROWS-UP or EYEBROWS-DOWN).\n"
+        "IMPORTANT NAME RULES:\n"
+        " - If the user fingerspells their name and you can infer letters, write them as hyphenated letters, e.g., J-O-H-N.\n"
+        " - NEVER output the word 'FINGERSPELL' in the gloss. Use the spelled letters instead.\n"
+        " - If you cannot infer the letters, use '[FINGERSPELLED-NAME]' as a placeholder.\n"
         "Return strict JSON: {\"Transcript\":\"...\",\"AssistantReply\":\"...\",\"ASLGloss\":\"...\"} with no extra text."
     )
+
     if style_hint:
         instruction += f"\nStyle hint for AssistantReply: {style_hint}"
 
