@@ -1,0 +1,94 @@
+name = "/vision:asl_veo"
+description = "Capture ASL → understand → animate an avatar replying IN ASL (Veo). One or more cycles."
+
+prompt = '''
+You have the tools: vision_status, vision_start, vision_burst,
+                    asl_understand, banana_generate, veo_generate_video.
+
+Behavior:
+
+0) Parse args (optional unless noted):
+   - out_dir:str          (default ".")
+   - format:str           (default "jpg")
+   - n:int                (default 0)              # frames via burst (0 = derive from duration_ms/period_ms)
+   - period_ms:int        (default 150)
+   - duration_ms:int      (default 3000)          # ~3s capture
+   - cycles:int           (default 1)             # how many capture→video loops
+   - pause_secs:int       (default 20)
+   - style_hint:str       (default "friendly, concise")
+   - avatar_source:str    (default "banana")      # "banana" | "capture" | "none"
+   - avatar_prompt:str    (default "Neutral chest-up avatar, plain bg, clear hands, realistic, well-lit.")
+   - banana_model:str     (default "gemini-2.5-flash-image-preview")
+   - veo_model:str        (default "veo-3.0-generate-001")
+   - aspect_ratio:str     (optional; "16:9" | "9:16")
+   - resolution:str       (optional; e.g., "1080p" for 16:9)
+   - seed:int             (optional)
+   - camera_index:int, width:int, height:int, fps:int, backend:str  (optional auto-start)
+
+Per-cycle flow:
+
+1) Ensure camera:
+   - vision_status(); if open=false → vision_start(camera_index={{camera_index|0}}, width={{width|640}}, height={{height|480}}, fps={{fps|15}}, backend="{{backend|auto}}")
+   - vision_status() again; if still closed → print "Camera failed to open" and stop.
+
+2) Burst:
+   - vision_burst(n={{n|0}}, period_ms={{period_ms|150}}, duration_ms={{duration_ms|3000}}, save_dir={{out_dir|"."}}, format={{format|"jpg"}})
+   - Bind 'paths' → {{frame_paths}} (chronological). If empty → print "No frames captured." and stop.
+
+3) Understand ASL:
+   - asl_understand(paths={{frame_paths}}, style_hint={{style_hint|"friendly, concise"}})
+   - Bind: {{transcript}}, {{assistant_reply}}, {{asl_gloss}}
+   - If {{asl_gloss}} empty → print "Could not derive ASL gloss." and stop.
+
+4) Avatar still:
+   - If {{avatar_source|"banana"}} == "banana":
+       banana_generate(prompt={{avatar_prompt|"Neutral chest-up avatar, plain bg, clear hands, realistic, well-lit."}},
+                       out_dir={{out_dir|"."}}, model={{banana_model|"gemini-2.5-flash-image-preview"}}, n=1)
+       Bind first 'paths' to {{avatar_img}}
+     Else if "capture":
+       Set {{avatar_img}} = first of {{frame_paths}}
+     Else:
+       {{avatar_img}} = None
+
+5) Veo video (sign the gloss):
+   - Compose {{veo_text}}:
+     "Generate a video of a generic signing avatar replying IN ASL using this GLOSS (verbatim):\n{{asl_gloss}}\n"
+     "Frontal chest-up, neutral background, 24fps, clear hand visibility, correct non-manual markers (facial expression, head tilt), minimal camera motion."
+   - veo_generate_video(
+        prompt={{veo_text}},
+        out_dir={{out_dir|"."}},
+        model={{veo_model|"veo-3.0-generate-001"}},
+        image_path={{avatar_img or None}},
+        aspect_ratio={{aspect_ratio|None}},
+        resolution={{resolution|None}},
+        seed={{seed|None}}
+     )
+   - Bind 'paths' → {{video_paths}}
+
+6) Output:
+   - Print:
+     "Transcript: {{transcript}}"
+     "AssistantReply: {{assistant_reply}}"
+     "ASLGloss: {{asl_gloss}}"
+   - For each {{v}} in {{video_paths}}:
+       • Print "Video: {{v}}"
+       • Emit "@<basename>"
+
+Looping:
+- If {{cycles}} > 1: pause {{pause_secs|20}} seconds between cycles. Stop on camera close/no frames/safety.
+On any failure, print a concise error and stop.
+'''
+
+[defaults]
+out_dir       = "."
+format        = "jpg"
+n             = 0
+period_ms     = 150
+duration_ms   = 3000
+cycles        = 1
+pause_secs    = 20
+style_hint    = "friendly, concise"
+avatar_source = "banana"
+avatar_prompt = "Neutral chest-up avatar, plain bg, clear hands, realistic, well-lit."
+banana_model  = "gemini-2.5-flash-image-preview"
+veo_model     = "veo-3.0-generate-001"
