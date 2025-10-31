@@ -422,7 +422,7 @@ def veo_generate_video(
     prompt: str,
     negative_prompt: str = "",
     out_dir: str = ".",
-    model: str = "veo-3.0-generate-001",
+    model: str = "veo-3.1-generate-preview",
     image_path: str | None = None,   # NEW: pass a still to animate
     aspect_ratio: str | None = None, # e.g. "16:9" or "9:16"
     resolution: str | None = None,   # e.g. "720p" or "1080p" (16:9 only)
