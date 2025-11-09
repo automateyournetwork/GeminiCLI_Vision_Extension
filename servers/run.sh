@@ -4,7 +4,7 @@ set -euo pipefail
 EXT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
 SERVERS_DIR="$EXT_DIR/servers"
 VENV="$SERVERS_DIR/visionmcp"
-PYTHON_BIN="${PYTHON_BIN:-python3.10}"
+PYTHON_BIN="${PYTHON_BIN:-python3}"
 
 # 1) Create venv if missing
 if [ ! -x "$VENV/bin/python3" ]; then
