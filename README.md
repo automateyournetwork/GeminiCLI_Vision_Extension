@@ -261,3 +261,9 @@ Head of Developer Relations — Selector AI
 /talk, /listen, /vision, /computeruse, /packet_buddy, /subnetcalculator, /file_search
 
 “The CLI is dead — long live the multimodal CLI.”
+
+## 🎬 Demo Video  
+Check out this quick walkthrough showing the **Vision Extension** in action—webcam capture, Banana (image generation), and Veo (video generation).  
+[![Make videos with Gemini-CLI, Nano Banana, and Veo3](https://img.youtube.com/vi/0LIPzVDF4LU/0.jpg)](https://youtu.be/0LIPzVDF4LU?si=upktxT1c-AxY3z2a)  
+
+<https://youtu.be/0LIPzVDF4LU?si=upktxT1c-AxY3z2a>  
